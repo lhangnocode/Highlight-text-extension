@@ -2,8 +2,7 @@
 chrome.runtime.onInstalled.addListener(() => {
   chrome.storage.sync.set({
     highlightColor: '#FFFF00',  // Màu vàng
-    highlightOpacity: '0.5',    // Độ mờ 50%
-    highlightDuration: '1500'   // Thời gian hiệu ứng 1.5 giây
+    highlightOpacity: '0.5'     // Độ mờ 50%
   });
   
   console.log('EWG Highlighter đã được cài đặt với cấu hình mặc định');

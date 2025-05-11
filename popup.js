@@ -1,22 +1,16 @@
 // Các phần tử DOM
 const colorPicker = document.getElementById('highlight-color');
 const opacitySlider = document.getElementById('highlight-opacity');
-const durationSlider = document.getElementById('highlight-duration');
 const opacityValue = document.getElementById('opacity-value');
-const durationValue = document.getElementById('duration-value');
 const saveButton = document.getElementById('save-button');
 const highlightNowButton = document.getElementById('highlight-now');
 const statusMessage = document.getElementById('status-message');
 const previewText = document.getElementById('preview-text');
 
-// Cập nhật giá trị hiển thị cho các slider
+// Cập nhật giá trị hiển thị cho slider opacity
 opacitySlider.addEventListener('input', () => {
   opacityValue.textContent = opacitySlider.value;
   updatePreview();
-});
-
-durationSlider.addEventListener('input', () => {
-  durationValue.textContent = durationSlider.value;
 });
 
 // Cập nhật preview khi thay đổi màu
@@ -28,11 +22,9 @@ function loadSettings() {
     if (settings) {
       colorPicker.value = settings.highlightColor || '#FFFF00';
       opacitySlider.value = settings.highlightOpacity || 0.5;
-      durationSlider.value = settings.highlightDuration || 1500;
       
       // Cập nhật hiển thị giá trị
       opacityValue.textContent = opacitySlider.value;
-      durationValue.textContent = durationSlider.value;
       
       // Cập nhật preview
       updatePreview();
@@ -44,8 +36,7 @@ function loadSettings() {
 saveButton.addEventListener('click', () => {
   const settings = {
     highlightColor: colorPicker.value,
-    highlightOpacity: opacitySlider.value,
-    highlightDuration: durationSlider.value
+    highlightOpacity: opacitySlider.value
   };
   
   chrome.runtime.sendMessage({ 
@@ -91,32 +82,9 @@ function updatePreview() {
   const g = parseInt(hex.substring(2, 4), 16);
   const b = parseInt(hex.substring(4, 6), 16);
   
-  // Tạo keyframes mới với màu đã chọn
-  const styleSheet = document.styleSheets[0];
-  let keyframesRule;
-  
-  // Tìm quy tắc @keyframes cũ để xóa
-  for (let i = 0; i < styleSheet.cssRules.length; i++) {
-    if (styleSheet.cssRules[i].type === CSSRule.KEYFRAMES_RULE && 
-        styleSheet.cssRules[i].name === 'previewHighlight') {
-      styleSheet.deleteRule(i);
-      break;
-    }
-  }
-  
-  // Thêm quy tắc @keyframes mới
-  const keyframesText = `@keyframes previewHighlight {
-    0% { background-color: rgba(${r}, ${g}, ${b}, 0); }
-    20% { background-color: rgba(${r}, ${g}, ${b}, ${opacitySlider.value}); }
-    100% { background-color: rgba(${r}, ${g}, ${b}, 0); }
-  }`;
-  
-  styleSheet.insertRule(keyframesText, styleSheet.cssRules.length);
-  
-  // Áp dụng animation cho preview
-  previewText.style.animation = 'none';
-  previewText.offsetHeight; // Trigger reflow
-  previewText.style.animation = 'previewHighlight 1.5s ease-in-out';
+  // Áp dụng highlight tĩnh cho preview
+  previewText.style.backgroundColor = `rgba(${r}, ${g}, ${b}, ${opacitySlider.value})`;
+  previewText.style.transition = 'background-color 0.3s ease-in-out';
   
   // Thêm viền
   previewText.style.position = 'relative';

@@ -31,10 +31,8 @@ function highlightElement(element) {
   element.style.setProperty('--highlight-color', highlightConfig.color);
   element.style.setProperty('--highlight-opacity', highlightConfig.opacity);
   
-  // Xóa highlight sau khoảng thời gian định sẵn
-  setTimeout(() => {
-    element.classList.remove('ewg-highlighted');
-  }, parseInt(highlightConfig.duration));
+  // Không còn xóa highlight sau một khoảng thời gian
+  // Highlight sẽ được duy trì khi phần tử còn trong viewport
 }
 
 /**
@@ -49,7 +47,7 @@ function highlightCurrentTitles() {
 }
 
 /**
- * Thiết lập Intersection Observer để theo dõi các tiêu đề mới
+ * Thiết lập Intersection Observer để theo dõi các tiêu đề trong và ngoài viewport
  */
 function setupIntersectionObserver() {
   const observerOptions = {
@@ -60,9 +58,13 @@ function setupIntersectionObserver() {
   
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
-      // Chỉ highlight khi phần tử mới xuất hiện trong viewport
+      // Highlight khi phần tử xuất hiện trong viewport
       if (entry.isIntersecting) {
         highlightElement(entry.target);
+      } 
+      // Bỏ highlight khi phần tử ra khỏi viewport
+      else {
+        entry.target.classList.remove('ewg-highlighted');
       }
     });
   }, observerOptions);

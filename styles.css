@@ -1,36 +1,34 @@
-/* Không còn cần hiệu ứng fade vì highlight sẽ được duy trì */
-
-/* Lớp áp dụng cho các phần tử được highlight */
+/* CSS cho hiệu ứng highlight */
 .ewg-highlighted {
-  /* Thiết lập biến CSS mặc định (sẽ được ghi đè bởi JavaScript) */
-  --highlight-color: #FFFF00;
-  --highlight-opacity: 0.5;
-  --highlight-rgb: 255, 255, 0;
-  
-  /* Áp dụng highlight tĩnh thay vì animation */
-  position: relative;
-  background-color: rgba(var(--highlight-rgb), var(--highlight-opacity)) !important;
-  transition: background-color 0.3s ease-in-out;
-  z-index: 1;
+  background-color: var(--highlight-color, #FFFF00) !important;
+  opacity: var(--highlight-opacity, 0.5) !important;
+  transition: background-color 0.3s ease-in-out !important;
+  position: relative !important;
+  z-index: 1 !important;
+  border: 2px solid var(--highlight-color, #FFFF00) !important;
+  border-radius: 3px !important;
 }
 
-/* Hiệu ứng viền */
-.ewg-highlighted::before {
-  content: '';
-  position: absolute;
-  top: -2px;
-  left: -2px;
-  right: -2px;
-  bottom: -2px;
-  background-color: transparent;
-  border: 2px solid var(--highlight-color);
-  opacity: var(--highlight-opacity);
-  z-index: -1;
-  border-radius: 4px;
-  pointer-events: none;
+/* Hiệu ứng đặc biệt cho các điểm đánh giá cao (1-2) */
+.ewg-highlighted.low-concern {
+  border-color: green !important;
 }
 
-/* Đảm bảo văn bản vẫn đọc được */
-.ewg-highlighted {
-  background-color: transparent !important;
+/* Hiệu ứng đặc biệt cho các điểm đánh giá trung bình (3-6) */
+.ewg-highlighted.moderate-concern {
+  border-color: orange !important;
 }
+
+/* Hiệu ứng đặc biệt cho các điểm đánh giá thấp (7-10) */
+.ewg-highlighted.high-concern {
+  border-color: red !important;
+}
+
+/* Làm nổi bật phần tử khi hover */
+.ewg-highlighted:hover {
+  filter: brightness(1.1);
+  transform: scale(1.02);
+  transition: all 0.2s ease-in-out;
+}
+
+/* hien tai thi chua co kiem tra duoc danh gia (minh se dung backend de kiem tra danh gia)

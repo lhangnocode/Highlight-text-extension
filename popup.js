@@ -6,6 +6,31 @@ const saveButton = document.getElementById('save-button');
 const highlightNowButton = document.getElementById('highlight-now');
 const statusMessage = document.getElementById('status-message');
 const previewText = document.getElementById('preview-text');
+const categorySelect = document.getElementById('category-select'); // Thêm select cho danh mục sản phẩm
+
+// Danh sách các danh mục mỹ phẩm trên EWG
+const ewgCategories = [
+  { id: 'all', name: 'Tất cả sản phẩm' },
+  { id: 'Lip_balm', name: 'Son dưỡng môi' },
+  { id: 'Eye_shadow', name: 'Phấn mắt' },
+  { id: 'Facial_powder', name: 'Phấn phủ mặt' },
+  { id: 'Foundation', name: 'Kem nền' },
+  { id: 'Lipstick', name: 'Son môi' },
+  { id: 'Blush', name: 'Phấn má hồng' },
+  { id: 'Mascara', name: 'Mascara' },
+  { id: 'Face_moisturizer', name: 'Kem dưỡng ẩm mặt' },
+  { id: 'Sunscreen', name: 'Kem chống nắng' }
+];
+
+// Khởi tạo danh sách danh mục
+function initializeCategorySelect() {
+  ewgCategories.forEach(category => {
+    const option = document.createElement('option');
+    option.value = category.id;
+    option.textContent = category.name;
+    categorySelect.appendChild(option);
+  });
+}
 
 // Cập nhật giá trị hiển thị cho slider opacity
 opacitySlider.addEventListener('input', () => {
@@ -22,6 +47,7 @@ function loadSettings() {
     if (settings) {
       colorPicker.value = settings.highlightColor || '#FFFF00';
       opacitySlider.value = settings.highlightOpacity || 0.5;
+      categorySelect.value = settings.selectedCategory || 'all';
       
       // Cập nhật hiển thị giá trị
       opacityValue.textContent = opacitySlider.value;
@@ -36,10 +62,11 @@ function loadSettings() {
 saveButton.addEventListener('click', () => {
   const settings = {
     highlightColor: colorPicker.value,
-    highlightOpacity: opacitySlider.value
+    highlightOpacity: opacitySlider.value,
+    selectedCategory: categorySelect.value
   };
   
-  chrome.runtime.sendMessage({ 
+  chrome.runtime.sendMessage({
     action: 'saveSettings',
     settings: settings
   }, (response) => {
@@ -56,17 +83,36 @@ saveButton.addEventListener('click', () => {
 highlightNowButton.addEventListener('click', () => {
   // Kiểm tra tab hiện tại có phải là trang EWG không
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-    if (tabs[0].url.includes('https://www.ewg.org/skindeep/browse/category/Lip_balm')) {
-      chrome.tabs.sendMessage(tabs[0].id, { action: 'rehighlight' }, (response) => {
+    const currentUrl = tabs[0].url;
+    const isEwgPage = currentUrl.includes('https://www.ewg.org/skindeep');
+    const selectedCategory = categorySelect.value;
+    
+    if (isEwgPage) {
+      // Nếu chọn danh mục cụ thể, kiểm tra xem trang hiện tại có phải danh mục đó không
+      if (selectedCategory !== 'all') {
+        const isCategoryMatch = currentUrl.includes(`/browse/category/${selectedCategory}`);
+        if (!isCategoryMatch) {
+          statusMessage.textContent = `Không phải trang danh mục ${categorySelect.options[categorySelect.selectedIndex].textContent}!`;
+          setTimeout(() => {
+            statusMessage.textContent = '';
+          }, 3000);
+          return;
+        }
+      }
+      
+      chrome.tabs.sendMessage(tabs[0].id, { 
+        action: 'rehighlight',
+        category: selectedCategory
+      }, (response) => {
         if (response) {
-          statusMessage.textContent = 'Đã highlight các tiêu đề!';
+          statusMessage.textContent = 'Đã highlight các sản phẩm!';
           setTimeout(() => {
             statusMessage.textContent = '';
           }, 3000);
         }
       });
     } else {
-      statusMessage.textContent = 'Không phải trang EWG Lip Balm!';
+      statusMessage.textContent = 'Không phải trang EWG Skin Deep!';
       setTimeout(() => {
         statusMessage.textContent = '';
       }, 3000);
@@ -92,11 +138,18 @@ function updatePreview() {
   previewText.style.setProperty('--preview-opacity', opacitySlider.value);
   
   // Thêm hoặc cập nhật pseudo-element
+  const styleSheet = document.styleSheets[0];
+  let beforeRuleIndex = -1;
+  
   for (let i = 0; i < styleSheet.cssRules.length; i++) {
     if (styleSheet.cssRules[i].selectorText === '#preview-text::before') {
-      styleSheet.deleteRule(i);
+      beforeRuleIndex = i;
       break;
     }
+  }
+  
+  if (beforeRuleIndex !== -1) {
+    styleSheet.deleteRule(beforeRuleIndex);
   }
   
   const beforeRule = `#preview-text::before {
@@ -117,4 +170,7 @@ function updatePreview() {
 }
 
 // Khởi tạo khi mở popup
-document.addEventListener('DOMContentLoaded', loadSettings);
+document.addEventListener('DOMContentLoaded', () => {
+  initializeCategorySelect();
+  loadSettings();
+});

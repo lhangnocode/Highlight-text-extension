@@ -1,47 +1,42 @@
-// Thiết lập giá trị mặc định khi extension được cài đặt
+// Khởi tạo giá trị mặc định cho cấu hình
 chrome.runtime.onInstalled.addListener(() => {
-  chrome.storage.sync.set({
-    highlightColor: '#FFFF00',  // Màu vàng
-    highlightOpacity: '0.5'     // Độ mờ 50%
-  });
-  
-  console.log('EWG Highlighter đã được cài đặt với cấu hình mặc định');
+  chrome.storage.sync.get(
+    ['highlightColor', 'highlightOpacity', 'highlightDuration', 'selectedCategory'],
+    (result) => {
+      // Chỉ đặt những giá trị chưa tồn tại
+      const defaultSettings = {};
+      
+      if (!result.highlightColor) defaultSettings.highlightColor = '#FFFF00';
+      if (!result.highlightOpacity) defaultSettings.highlightOpacity = '0.5';
+      if (!result.highlightDuration) defaultSettings.highlightDuration = '1500';
+      if (!result.selectedCategory) defaultSettings.selectedCategory = 'all';
+      
+      // Lưu các giá trị mặc định nếu có
+      if (Object.keys(defaultSettings).length > 0) {
+        chrome.storage.sync.set(defaultSettings);
+      }
+    }
+  );
 });
 
-// Lắng nghe khi tab thay đổi
-chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-  // Kiểm tra nếu URL khớp với trang mục tiêu và trang đã tải xong
-  if (changeInfo.status === 'complete' && 
-      tab.url && 
-      tab.url.includes('https://www.ewg.org/skindeep/browse/category/Lip_balm')) {
-    
-    // Gửi thông báo đến content script để kích hoạt highlight
-    chrome.tabs.sendMessage(tabId, {
-      action: 'pageLoaded',
-      url: tab.url
-    });
-  }
-});
-
-// Lắng nghe tin nhắn từ popup.js
+// Lắng nghe thông điệp từ popup.js
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  // Lấy cài đặt hiện tại
   if (message.action === 'getSettings') {
-    // Trả về các cài đặt hiện tại
-    chrome.storage.sync.get(['highlightColor', 'highlightOpacity', 'highlightDuration'], (data) => {
-      sendResponse(data);
-    });
-    return true; // Yêu cầu cho sendResponse không đồng bộ
+    chrome.storage.sync.get(
+      ['highlightColor', 'highlightOpacity', 'highlightDuration', 'selectedCategory'],
+      (result) => {
+        sendResponse(result);
+      }
+    );
+    return true; // Cho phép sendResponse bất đồng bộ
   }
   
-  else if (message.action === 'saveSettings') {
-    // Lưu cài đặt mới
-    chrome.storage.sync.set({
-      highlightColor: message.settings.highlightColor,
-      highlightOpacity: message.settings.highlightOpacity,
-      highlightDuration: message.settings.highlightDuration
-    }, () => {
-      // Cập nhật cài đặt cho tất cả các tab đang mở
-      chrome.tabs.query({url: 'https://www.ewg.org/skindeep/browse/category/Lip_balm*'}, (tabs) => {
+  // Lưu cài đặt mới
+  if (message.action === 'saveSettings') {
+    chrome.storage.sync.set(message.settings, () => {
+      // Thông báo cho tất cả các tab đang mở của EWG về thay đổi cấu hình
+      chrome.tabs.query({ url: 'https://www.ewg.org/skindeep/*' }, (tabs) => {
         tabs.forEach(tab => {
           chrome.tabs.sendMessage(tab.id, {
             action: 'updateConfig',
@@ -50,8 +45,25 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         });
       });
       
-      sendResponse({status: 'success'});
+      sendResponse({ status: 'success' });
     });
-    return true; // Yêu cầu cho sendResponse không đồng bộ
+    return true; // Cho phép sendResponse bất đồng bộ
   }
+});
+
+// Lắng nghe sự kiện khi tab được kích hoạt
+chrome.tabs.onActivated.addListener((activeInfo) => {
+  chrome.tabs.get(activeInfo.tabId, (tab) => {
+    // Kiểm tra xem tab đang hoạt động có phải trang EWG không
+    if (tab.url && tab.url.includes('https://www.ewg.org/skindeep')) {
+      // Lấy danh mục đã chọn từ storage
+      chrome.storage.sync.get(['selectedCategory'], (result) => {
+        // Gửi thông điệp đến content script để cập nhật danh mục đã chọn
+        chrome.tabs.sendMessage(tab.id, {
+          action: 'updateConfig',
+          config: { category: result.selectedCategory || 'all' }
+        });
+      });
+    }
+  });
 });

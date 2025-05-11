@@ -1,0 +1,21 @@
+{
+  "manifest_version": 3,
+  "name": "EWG Skin Deep Highlighter",
+  "version": "1.0",
+  "description": "Tự động highlight tiêu đề trên trang EWG Skin Deep khi lướt trang",
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "permissions": ["storage", "activeTab"],
+  "host_permissions": ["https://www.ewg.org/*"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://www.ewg.org/skindeep/browse/category/Lip_balm/*"],
+      "js": ["content.js"],
+      "css": ["styles.css"]
+    }
+  ]
+}

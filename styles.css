@@ -1,0 +1,46 @@
+/* Định nghĩa hiệu ứng highlight */
+@keyframes highlightFade {
+  0% {
+    background-color: rgba(var(--highlight-rgb), 0);
+  }
+  20% {
+    background-color: rgba(var(--highlight-rgb), var(--highlight-opacity));
+  }
+  100% {
+    background-color: rgba(var(--highlight-rgb), 0);
+  }
+}
+
+/* Lớp áp dụng cho các phần tử được highlight */
+.ewg-highlighted {
+  /* Thiết lập biến CSS mặc định (sẽ được ghi đè bởi JavaScript) */
+  --highlight-color: #FFFF00;
+  --highlight-opacity: 0.5;
+  --highlight-rgb: 255, 255, 0;
+  
+  /* Chuyển đổi hex sang rgb */
+  position: relative;
+  animation: highlightFade 1.5s ease-in-out;
+  z-index: 1;
+}
+
+/* Hiệu ứng viền */
+.ewg-highlighted::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background-color: transparent;
+  border: 2px solid var(--highlight-color);
+  opacity: var(--highlight-opacity);
+  z-index: -1;
+  border-radius: 4px;
+  pointer-events: none;
+}
+
+/* Đảm bảo văn bản vẫn đọc được */
+.ewg-highlighted {
+  background-color: transparent !important;
+}

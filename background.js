@@ -54,16 +54,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 // Lắng nghe sự kiện khi tab được kích hoạt
 chrome.tabs.onActivated.addListener((activeInfo) => {
   chrome.tabs.get(activeInfo.tabId, (tab) => {
-    // Kiểm tra xem tab đang hoạt động có phải trang EWG không
-    if (tab.url && tab.url.includes('https://www.ewg.org/skindeep')) {
-      // Lấy danh mục đã chọn từ storage
-      chrome.storage.sync.get(['selectedCategory'], (result) => {
-        // Gửi thông điệp đến content script để cập nhật danh mục đã chọn
-        chrome.tabs.sendMessage(tab.id, {
-          action: 'updateConfig',
-          config: { category: result.selectedCategory || 'all' }
-        });
-      });
+    // Kiểm tra xem tab đang hoạt động có phải trang cocolux không
+    if (tab.url && tab.url.includes('cocolux.com')) {
+      // Gửi thông điệp đến content script để cập nhật danh mục (cố định là 'cocolux')
+      chrome.tabs.sendMessage(tab.id, { action: 'updateConfig', config: { category: 'cocolux' } });
     }
   });
 });

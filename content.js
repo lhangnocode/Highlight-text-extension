@@ -3,229 +3,104 @@ let highlightConfig = {
   color: '#FFFF00', // Màu vàng mặc định
   opacity: '0.5',   // Độ mờ mặc định
   duration: '1500', // Thời gian hiệu ứng (ms)
-  category: 'all'   // Danh mục sản phẩm mặc định (tất cả)
+  category: 'cocolux' // Danh mục cố định cho cocolux
 };
 
-// Khai báo các cấu trúc selector theo từng danh mục
+// Khai báo các cấu trúc selector cho cocolux
 const categorySelectors = {
-  // Selector mặc định cho tất cả sản phẩm
-  all: {
+  cocolux: {
     productTitle: [
-      '.product-tile h2',              // Tiêu đề sản phẩm
-      '.product-tile .product-name',   // Tên sản phẩm
-      '.product-score-container h3'    // Điểm đánh giá
+      'h1.detail-title', // Tiêu đề sản phẩm chi tiết
+      '.product-title', // Tiêu đề sản phẩm ở danh sách (nếu có)
+      '.product-item__title' // Tiêu đề sản phẩm ở danh sách (nếu có)
     ],
-    productItem: '.product-tile',
-    productScore: '.product-score'
-  },
-  // Selector đặc biệt cho từng danh mục nếu cần
-  Lip_balm: {
-    productTitle: [
-      '.product-tile h2',
-      '.product-tile .product-name',
-      '.product-score-container h3'
-    ],
-    productItem: '.product-tile',
-    productScore: '.product-score'
-  },
-  Eye_shadow: {
-    productTitle: [
-      '.product-tile h2',
-      '.product-tile .product-name',
-      '.product-score-container h3'
-    ],
-    productItem: '.product-tile',
-    productScore: '.product-score'
-  },
-  Facial_powder: {
-    productTitle: [
-      '.product-tile h2',
-      '.product-tile .product-name',
-      '.product-score-container h3'
-    ],
-    productItem: '.product-tile',
-    productScore: '.product-score'
+    productItem: '.product-item',
+    productScore: '' // Cocolux không có điểm số
   }
-  // Thêm các danh mục khác khi cần thiết
 };
 
-// Hàm để xác định trang hiện tại thuộc danh mục nào
+// Hàm để xác định trang hiện tại (cố định là cocolux)
 function getCurrentCategory() {
-  const url = window.location.href;
-  
-  // Kiểm tra xem URL có chứa /browse/category/ không
-  if (url.includes('/browse/category/')) {
-    // Trích xuất tên danh mục từ URL
-    const matches = url.match(/\/browse\/category\/([^\/]+)/);
-    if (matches && matches[1]) {
-      const category = matches[1];
-      
-      // Kiểm tra xem danh mục có trong danh sách đã định nghĩa không
-      if (categorySelectors[category]) {
-        return category;
-      }
-    }
-  }
-  
-  // Mặc định trả về 'all' nếu không tìm thấy danh mục cụ thể
-  return 'all';
+  return 'cocolux';
 }
 
 // Lấy cấu hình từ storage nếu có
 function loadConfig() {
-  chrome.storage.sync.get(
-    ['highlightColor', 'highlightOpacity', 'highlightDuration', 'selectedCategory'],
-    (result) => {
-      if (result.highlightColor) highlightConfig.color = result.highlightColor;
-      if (result.highlightOpacity) highlightConfig.opacity = result.highlightOpacity;
-      if (result.highlightDuration) highlightConfig.duration = result.highlightDuration;
-      if (result.selectedCategory) highlightConfig.category = result.selectedCategory;
-      
-      // Áp dụng highlight sau khi có cấu hình
-      applyHighlightToCurrentPage();
-    }
-  );
+  chrome.storage.sync.get(['highlightColor', 'highlightOpacity', 'highlightDuration'], (result) => {
+    if (result.highlightColor) highlightConfig.color = result.highlightColor;
+    if (result.highlightOpacity) highlightConfig.opacity = result.highlightOpacity;
+    if (result.highlightDuration) highlightConfig.duration = result.highlightDuration;
+    // Áp dụng highlight sau khi có cấu hình
+    applyHighlightToCurrentPage();
+  });
 }
 
-/**
- * Hàm highlight một phần tử
- * @param {HTMLElement} element - Phần tử cần highlight
- */
+// Hàm highlight một phần tử
 function highlightElement(element) {
-  // Thêm class để áp dụng hiệu ứng CSS
   element.classList.add('ewg-highlighted');
-  
-  // Thiết lập biến CSS tùy chỉnh cho phần tử này
   element.style.setProperty('--highlight-color', highlightConfig.color);
   element.style.setProperty('--highlight-opacity', highlightConfig.opacity);
-  
-  // Không còn xóa highlight sau một khoảng thời gian
-  // Highlight sẽ được duy trì khi phần tử còn trong viewport
 }
 
-/**
- * Kiểm tra xem phần tử có nên được highlight không dựa vào danh mục đã chọn
- * @param {HTMLElement} element - Phần tử cần kiểm tra
- * @returns {Boolean} - Có nên highlight không
- */
+// Kiểm tra xem phần tử có nên được highlight không (luôn trả về true cho cocolux)
 function shouldHighlightElement(element) {
-  // Nếu đã chọn tất cả danh mục, luôn highlight
-  if (highlightConfig.category === 'all') {
-    return true;
-  }
-  
-  // Lấy danh mục hiện tại từ URL
-  const currentCategory = getCurrentCategory();
-  
-  // Nếu đang ở trang đúng danh mục đã chọn
-  return highlightConfig.category === 'all' || highlightConfig.category === currentCategory;
+  return true;
 }
 
-/**
- * Highlight tất cả các tiêu đề hiện tại trên trang
- */
+// Highlight tất cả các tiêu đề hiện tại trên trang
 function highlightCurrentTitles() {
-  // Xác định danh mục hiện tại
-  const currentCategory = getCurrentCategory();
-  
-  // Nếu danh mục đã chọn là 'all' hoặc khớp với danh mục hiện tại
-  if (highlightConfig.category === 'all' || highlightConfig.category === currentCategory) {
-    const selectors = categorySelectors[currentCategory].productTitle;
-    
-    selectors.forEach(selector => {
-      document.querySelectorAll(selector).forEach(element => {
-        highlightElement(element);
-      });
+  const selectors = categorySelectors.cocolux.productTitle;
+  selectors.forEach(selector => {
+    document.querySelectorAll(selector).forEach(element => {
+      highlightElement(element);
     });
-  }
+  });
 }
 
-/**
- * Áp dụng highlight cho trang hiện tại dựa trên danh mục
- */
+// Áp dụng highlight cho trang hiện tại
 function applyHighlightToCurrentPage() {
-  // Xóa tất cả highlight hiện có
-  document.querySelectorAll('.ewg-highlighted').forEach(el => {
-    el.classList.remove('ewg-highlighted');
-  });
-  
-  // Highlight lại các phần tử
+  document.querySelectorAll('.ewg-highlighted').forEach(el => { el.classList.remove('ewg-highlighted'); });
   highlightCurrentTitles();
-  
-  // Cập nhật IntersectionObserver với các selector mới
   if (intersectionObserver) {
     intersectionObserver.disconnect();
   }
   intersectionObserver = setupIntersectionObserver();
 }
 
-/**
- * Thiết lập Intersection Observer để theo dõi các tiêu đề trong và ngoài viewport
- */
+// Thiết lập Intersection Observer để theo dõi các tiêu đề trong và ngoài viewport
 function setupIntersectionObserver() {
-  const observerOptions = {
-    root: null, // Viewport
-    rootMargin: '0px',
-    threshold: 0.3 // Kích hoạt khi 30% phần tử hiển thị
-  };
-  
+  const observerOptions = { root: null, rootMargin: '0px', threshold: 0.3 };
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
-      // Chỉ xử lý nếu phần tử nên được highlight
-      if (shouldHighlightElement(entry.target)) {
-        // Highlight khi phần tử xuất hiện trong viewport
-        if (entry.isIntersecting) {
-          highlightElement(entry.target);
-        } 
-        // Bỏ highlight khi phần tử ra khỏi viewport
-        else {
-          entry.target.classList.remove('ewg-highlighted');
-        }
+      if (entry.isIntersecting) {
+        highlightElement(entry.target);
+      } else {
+        entry.target.classList.remove('ewg-highlighted');
       }
     });
   }, observerOptions);
-  
-  // Xác định danh mục hiện tại và thêm các tiêu đề vào observer
-  const currentCategory = getCurrentCategory();
-  const selectors = categorySelectors[currentCategory].productTitle;
-  
+  const selectors = categorySelectors.cocolux.productTitle;
   selectors.forEach(selector => {
-    document.querySelectorAll(selector).forEach(element => {
-      observer.observe(element);
-    });
+    document.querySelectorAll(selector).forEach(element => { observer.observe(element); });
   });
-  
   return observer;
 }
 
-/**
- * Xử lý khi trang web thêm nội dung mới (lazy loading)
- */
+// Xử lý khi trang web thêm nội dung mới (lazy loading)
 function handleDynamicContent() {
-  // Tạo một MutationObserver để theo dõi thay đổi trong DOM
   const mutationObserver = new MutationObserver((mutations) => {
     mutations.forEach((mutation) => {
-      // Tìm các tiêu đề mới được thêm vào
       if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
-        // Xác định danh mục hiện tại
-        const currentCategory = getCurrentCategory();
-        const selectors = categorySelectors[currentCategory].productTitle;
-        
+        const selectors = categorySelectors.cocolux.productTitle;
         mutation.addedNodes.forEach(node => {
-          // Kiểm tra nếu node là element
           if (node.nodeType === Node.ELEMENT_NODE) {
-            // Kiểm tra nếu node là tiêu đề cần highlight
             selectors.forEach(selector => {
-              if (node.matches(selector) && shouldHighlightElement(node)) {
+              if (node.matches(selector)) {
                 highlightElement(node);
               }
-              
-              // Kiểm tra con của node
               node.querySelectorAll(selector).forEach(element => {
-                if (shouldHighlightElement(element)) {
-                  highlightElement(element);
-                  intersectionObserver.observe(element);
-                }
+                highlightElement(element);
+                intersectionObserver.observe(element);
               });
             });
           }
@@ -233,13 +108,7 @@ function handleDynamicContent() {
       }
     });
   });
-  
-  // Thiết lập MutationObserver để quan sát toàn bộ document
-  mutationObserver.observe(document.body, {
-    childList: true,
-    subtree: true
-  });
-  
+  mutationObserver.observe(document.body, { childList: true, subtree: true });
   return mutationObserver;
 }
 
@@ -249,9 +118,7 @@ let mutationObserver;
 
 // Hàm khởi tạo chính
 function initialize() {
-  console.log('EWG Highlighter extension đã được kích hoạt');
-  
-  // Thêm một style cho highlight
+  console.log('Cocolux Highlighter extension đã được kích hoạt');
   const style = document.createElement('style');
   style.textContent = `
     .ewg-highlighted {
@@ -263,28 +130,16 @@ function initialize() {
     }
   `;
   document.head.appendChild(style);
-  
-  // Tải cấu hình từ storage
   loadConfig();
-  
-  // Theo dõi thay đổi nội dung (lazy loading)
   mutationObserver = handleDynamicContent();
-  
-  // Lắng nghe thông điệp từ popup hoặc background
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.action === 'updateConfig') {
-      highlightConfig = {...highlightConfig, ...message.config};
+      highlightConfig = { ...highlightConfig, ...message.config };
       applyHighlightToCurrentPage();
-      sendResponse({status: 'Config updated'});
+      sendResponse({ status: 'Config updated' });
     } else if (message.action === 'rehighlight') {
-      // Cập nhật danh mục nếu có
-      if (message.category) {
-        highlightConfig.category = message.category;
-      }
-      
-      // Áp dụng highlight lại
       applyHighlightToCurrentPage();
-      sendResponse({status: 'Rehighlighted'});
+      sendResponse({ status: 'Rehighlighted' });
     }
     return true;
   });

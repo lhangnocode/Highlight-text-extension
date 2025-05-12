@@ -1,21 +1,17 @@
 {
   "manifest_version": 3,
-  "name": "EWG Skin Deep Highlighter",
+  "name": "Cocolux Highlighter",
   "version": "1.0",
-  "description": "Tự động highlight tiêu đề trên trang EWG Skin Deep khi lướt trang",
+  "description": "Tự động highlight tiêu đề trên trang Cocolux khi lướt trang",
   "action": {
     "default_popup": "popup.html"
   },
   "permissions": ["storage", "activeTab"],
-  "host_permissions": ["https://www.ewg.org/*"],
+  "host_permissions": ["https://cocolux.com/*"],
   "background": {
     "service_worker": "background.js"
   },
   "content_scripts": [
-    {
-      "matches": ["https://www.ewg.org/skindeep/*"],
-      "js": ["content.js"],
-      "css": ["styles.css"]
-    }
+    { "matches": ["https://cocolux.com/*"], "js": ["content.js"], "css": ["styles.css"] }
   ]
 }
